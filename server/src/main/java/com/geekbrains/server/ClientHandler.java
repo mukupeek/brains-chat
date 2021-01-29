@@ -6,6 +6,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientHandler {
     private String nickname;
@@ -14,17 +16,19 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
 
+
     public String getNickname() {
         return nickname;
     }
 
-    public ClientHandler(Server server, Socket socket, AuthService authService) {
+    public ClientHandler(Server server, Socket socket, AuthService authService,ExecutorService executorService) {
         try {
             this.server = server;
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
-            new Thread(() -> {
+
+            executorService.submit(() -> {
                 try {
                     waitAuthorization(server);
                     waitMessageOrCommand(server,authService);
@@ -32,9 +36,9 @@ public class ClientHandler {
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
-                    ClientHandler.this.disconnect();
+                    disconnect();
                 }
-            }).start();
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
